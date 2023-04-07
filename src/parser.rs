@@ -30,43 +30,43 @@ fn tab_parser(i: &str) -> IResult<&str, Vec<&str>> {
     )(i)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 
-enum Strand {
+pub enum Strand {
     Positive,
     Negative,
 }
 
 #[derive(Debug)]
 
-struct SeqInfo {
-    name: String,
-    size: usize,
-    strand: Strand,
-    start: usize,
-    end: usize,
+pub struct SeqInfo {
+    pub name: String,
+    pub size: usize,
+    pub strand: Strand,
+    pub start: usize,
+    pub end: usize,
 }
 
 #[derive(Debug)]
 
-struct Header {
+pub struct Header {
     score: f64,
-    target: SeqInfo,
-    query: SeqInfo,
+    pub target: SeqInfo,
+    pub query: SeqInfo,
     chain_id: usize,
 }
 
 #[derive(Debug)]
-struct Alignment {
-    size: usize,        //the size of the ungapped alignment
-    target_diff: usize, //the difference between the end of this block and the beginning of the next block
-    query_diff: usize,
+pub struct Alignment {
+    pub size: usize,        //the size of the ungapped alignment
+    pub target_diff: usize, //the difference between the end of this block and the beginning of the next block
+    pub query_diff: usize,
 }
 
 #[derive(Debug)]
 pub struct ChainRecord {
-    header: Header,
-    blocks: Vec<Alignment>,
+    pub header: Header,
+    pub blocks: Vec<Alignment>,
 }
 
 pub struct ChainRecords<'a>(pub &'a str);
@@ -105,7 +105,7 @@ fn parse_header(header_line: &str) -> Result<Header, io::Error> {
         start: header_vec[4].parse::<usize>().unwrap(),
         end: header_vec[5].parse::<usize>().unwrap(),
     };
-    let source = SeqInfo {
+    let query = SeqInfo {
         name: header_vec[6].to_string(),
         size: header_vec[7].parse::<usize>().unwrap(),
         strand: if header_vec[8] == "+" {
@@ -120,7 +120,7 @@ fn parse_header(header_line: &str) -> Result<Header, io::Error> {
     let header = Header {
         score,
         target,
-        query: source,
+        query,
         chain_id,
     };
     Ok(header)
@@ -129,7 +129,9 @@ fn parse_header(header_line: &str) -> Result<Header, io::Error> {
 fn parse_blocks(blocks: Vec<&str>) -> Result<Vec<Alignment>, io::Error> {
     let mut alignments = Vec::new();
     for block in blocks {
-        let block_vec: Vec<&str> = block.split_whitespace().collect();
+        let mut block_vec: Vec<&str> = block.split_whitespace().collect();
+        block_vec.push("0");
+        block_vec.push("0");
         let size = block_vec[0].parse::<usize>().unwrap();
         let target_diff = block_vec[1].parse::<usize>().unwrap();
         let query_diff = block_vec[2].parse::<usize>().unwrap();

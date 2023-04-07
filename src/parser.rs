@@ -2,43 +2,30 @@ use std::io;
 
 use nom::{
     bytes::complete::{is_not, tag, take_while},
-    character::complete::{char, line_ending, multispace0, not_line_ending},
+    character::complete::{line_ending, not_line_ending},
     multi::fold_many1,
-    sequence::{delimited, terminated},
+    sequence::terminated,
     IResult,
 };
 
-fn line_not_chain(i: &str) -> IResult<&str, &str> {
-    terminated(is_not("chain\n"), line_ending)(i)
-}
-
-fn blocks(i: &str) -> IResult<&str, Vec<&str>> {
-    fold_many1(line_not_chain, Vec::new, |mut acc: Vec<_>, x| {
-        acc.push(x);
-        acc
-    })(i)
-}
-
-fn tab_parser(i: &str) -> IResult<&str, Vec<&str>> {
-    fold_many1(
-        delimited(multispace0, is_not("\t"), multispace0),
-        Vec::new,
-        |mut acc: Vec<_>, x| {
-            acc.push(x);
-            acc
-        },
-    )(i)
-}
+// fn tab_parser(i: &str) -> IResult<&str, Vec<&str>> {
+//     fold_many1(
+//         delimited(multispace0, is_not("\t"), multispace0),
+//         Vec::new,
+//         |mut acc: Vec<_>, x| {
+//             acc.push(x);
+//             acc
+//         },
+//     )(i)
+// }
 
 #[derive(Debug, Clone, PartialEq)]
-
 pub enum Strand {
     Positive,
     Negative,
 }
 
 #[derive(Debug)]
-
 pub struct SeqInfo {
     pub name: String,
     pub size: usize,
@@ -144,8 +131,20 @@ fn parse_blocks(blocks: Vec<&str>) -> Result<Vec<Alignment>, io::Error> {
     }
     Ok(alignments)
 }
+
+fn line_not_chain(i: &str) -> IResult<&str, &str> {
+    terminated(is_not("chain\n"), line_ending)(i)
+}
+
+fn blocks(i: &str) -> IResult<&str, Vec<&str>> {
+    fold_many1(line_not_chain, Vec::new, |mut acc: Vec<_>, x| {
+        acc.push(x);
+        acc
+    })(i)
+}
+
 pub fn chain_parser(input: &str) -> nom::IResult<&str, ChainRecord> {
-    let (input, _) = tag("chain\t")(input)?;
+    let (input, _) = tag("chain")(input)?;
     let (input, header_line) = not_line_ending(input)?;
     let (input, _) = line_ending(input)?;
     let (input, blocks) = blocks(input)?;

@@ -1,8 +1,8 @@
-use std::{collections::HashMap, fs::File, io::Read};
+use std::collections::HashMap;
 
 use rust_lapper::{Interval, Lapper};
 
-use crate::parser::{ChainRecord, ChainRecords, Strand};
+use crate::parser::{ChainRecord, Strand};
 
 pub fn fill_intersecter(
     a: Vec<Result<ChainRecord, String>>,

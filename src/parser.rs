@@ -1,5 +1,6 @@
 use std::io;
 
+use log::error;
 use nom::{
     bytes::complete::{is_not, tag, take_while},
     character::complete::{line_ending, not_line_ending},
@@ -8,16 +9,7 @@ use nom::{
     IResult,
 };
 
-// fn tab_parser(i: &str) -> IResult<&str, Vec<&str>> {
-//     fold_many1(
-//         delimited(multispace0, is_not("\t"), multispace0),
-//         Vec::new,
-//         |mut acc: Vec<_>, x| {
-//             acc.push(x);
-//             acc
-//         },
-//     )(i)
-// }
+use crate::interval::{get_block_ivl, Block, BlockIvl};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Strand {
@@ -25,7 +17,7 @@ pub enum Strand {
     Negative,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SeqInfo {
     pub name: String,
     pub size: usize,
@@ -34,7 +26,7 @@ pub struct SeqInfo {
     pub end: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 pub struct Header {
     score: f64,
@@ -53,7 +45,7 @@ pub struct Alignment {
 #[derive(Debug)]
 pub struct ChainRecord {
     pub header: Header,
-    pub blocks: Vec<Alignment>,
+    pub block_ivls: Vec<BlockIvl>,
 }
 
 pub struct ChainRecords<'a>(pub &'a str);
@@ -79,7 +71,12 @@ impl<'a> Iterator for ChainRecords<'a> {
 }
 
 fn parse_header(header_line: &str) -> Result<Header, io::Error> {
+    // println!("parse header here");
     let header_vec: Vec<&str> = header_line.split_whitespace().collect();
+    if header_vec.len() != 12 {
+        error!("invalid header: {}", header_line);
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid header"));
+    }
     let score = header_vec[0].parse::<f64>().unwrap();
     let target = SeqInfo {
         name: header_vec[1].to_string(),
@@ -113,10 +110,22 @@ fn parse_header(header_line: &str) -> Result<Header, io::Error> {
     Ok(header)
 }
 
-fn parse_blocks(blocks: Vec<&str>) -> Result<Vec<Alignment>, io::Error> {
-    let mut alignments = Vec::new();
-    for block in blocks {
-        let mut block_vec: Vec<&str> = block.split_whitespace().collect();
+fn line_not_chain(i: &str) -> IResult<&str, &str> {
+    terminated(is_not("chain\n"), line_ending)(i)
+}
+
+fn blocks(i: &str, header: Header) -> IResult<&str, Vec<BlockIvl>> {
+    let target_name = &header.target.name;
+    let target_start = header.target.start;
+    let target_strand = &header.target.strand;
+    let query_name = &header.query.name;
+    let query_start = header.query.start;
+    let query_strand = &header.query.strand;
+    let mut target_current_cursor = target_start;
+    let mut query_current_cursor = query_start;
+    let query_size = header.query.size;
+    let x = fold_many1(line_not_chain, Vec::new, |mut acc: Vec<_>, x| {
+        let mut block_vec: Vec<&str> = x.split_whitespace().collect();
         block_vec.push("0");
         block_vec.push("0");
         let size = block_vec[0].parse::<usize>().unwrap();
@@ -127,38 +136,68 @@ fn parse_blocks(blocks: Vec<&str>) -> Result<Vec<Alignment>, io::Error> {
             target_diff,
             query_diff,
         };
-        alignments.push(alignment);
-    }
-    Ok(alignments)
-}
 
-fn line_not_chain(i: &str) -> IResult<&str, &str> {
-    terminated(is_not("chain\n"), line_ending)(i)
-}
-
-fn blocks(i: &str) -> IResult<&str, Vec<&str>> {
-    fold_many1(line_not_chain, Vec::new, |mut acc: Vec<_>, x| {
-        acc.push(x);
+        let t2 = target_current_cursor;
+        let t3 = target_current_cursor + alignment.size;
+        let (q2, q3) = match query_strand {
+            Strand::Positive => (
+                (query_current_cursor),
+                (query_current_cursor + alignment.size),
+            ),
+            Strand::Negative => (
+                (query_size - (query_current_cursor + alignment.size)),
+                (query_size - query_current_cursor),
+            ),
+        };
+        target_current_cursor += alignment.size + alignment.target_diff;
+        query_current_cursor += alignment.size + alignment.query_diff;
+        // println!(
+        //     "{}\t{}\t{}\t{:?}\t{}\t{}\t{}\t{:?}",
+        //     target_name,
+        //     t2,
+        //     t3,
+        //     target_strand.clone(),
+        //     query_name,
+        //     q2,
+        //     q3,
+        //     query_strand.clone()
+        // );
+        let block_target = Block {
+            name: target_name.clone(),
+            start: t2,
+            end: t3,
+            strand: target_strand.clone(),
+        };
+        let block_query = Block {
+            name: query_name.clone(),
+            start: q2,
+            end: q3,
+            strand: query_strand.clone(),
+        };
+        let block_ivl = get_block_ivl(&block_target, block_query);
+        acc.push(block_ivl);
         acc
-    })(i)
+    })(i);
+    x
 }
 
 pub fn chain_parser(input: &str) -> nom::IResult<&str, ChainRecord> {
     let (input, _) = tag("chain")(input)?;
     let (input, header_line) = not_line_ending(input)?;
+    let header = parse_header(header_line).unwrap();
     let (input, _) = line_ending(input)?;
-    let (input, blocks) = blocks(input)?;
+    let (input, blocks) = blocks(input, header.clone())?;
     let (input, _) = take_while(|x| x != 'c')(input)?; // should better
                                                        // let (_, title_vec) = tab_parser(title)?;
-    let header = parse_header(header_line).unwrap();
-    let alignments = parse_blocks(blocks).unwrap();
-    Ok((
-        input,
-        ChainRecord {
-            header,
-            blocks: alignments,
-        },
-    ))
+                                                       // let alignments = parse_blocks(blocks).unwrap();
+
+    let chainrecord = ChainRecord {
+        block_ivls: blocks,
+        header: header.clone(),
+    };
+    // print_chain_record(&chainrecord);
+
+    Ok((input, chainrecord))
 }
 
 // fn fa_start_tag(i: &str) -> IResult<&str, char> {

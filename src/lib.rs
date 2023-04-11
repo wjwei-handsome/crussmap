@@ -1,3 +1,4 @@
+pub mod bed;
 pub mod interval;
 pub mod log;
 pub mod parser;

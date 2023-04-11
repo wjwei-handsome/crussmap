@@ -1,4 +1,4 @@
-use crussmap::{log::init_logger, view::view_chain};
+use crussmap::{interval::test_bed_find, log::init_logger, view::view_chain};
 
 fn main() {
     init_logger();
@@ -10,6 +10,13 @@ fn main() {
             output,
             rewrite,
         } => view_chain(input, output, *csv, *rewrite),
+        Commands::Test {
+            input,
+            chrom,
+            start,
+            end,
+            strand,
+        } => test_bed_find(input, chrom, *start, *end, strand),
     }
     // let a = read_test();
     // println!("{:?}", a)
@@ -40,5 +47,24 @@ enum Commands {
         /// Rewrite output file, default is false
         #[arg(short, long, default_value = "false")]
         rewrite: bool,
+    },
+
+    /// test for lapper
+    Test {
+        /// input tesr
+        #[arg(short, long, required = false)]
+        input: Option<String>,
+        /// chrom
+        #[arg(short, long)]
+        chrom: String,
+        /// start
+        #[arg(short, long)]
+        start: usize,
+        /// end
+        #[arg(short, long)]
+        end: usize,
+        /// strand
+        #[arg(long)]
+        strand: String,
     },
 }

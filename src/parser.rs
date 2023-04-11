@@ -11,10 +11,19 @@ use nom::{
 
 use crate::interval::{get_block_ivl, Block, BlockIvl};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Strand {
     Positive,
     Negative,
+}
+
+impl Strand {
+    pub fn reverse(&self) -> Self {
+        match self {
+            Strand::Positive => Strand::Negative,
+            Strand::Negative => Strand::Positive,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -151,17 +160,6 @@ fn blocks(i: &str, header: Header) -> IResult<&str, Vec<BlockIvl>> {
         };
         target_current_cursor += alignment.size + alignment.target_diff;
         query_current_cursor += alignment.size + alignment.query_diff;
-        // println!(
-        //     "{}\t{}\t{}\t{:?}\t{}\t{}\t{}\t{:?}",
-        //     target_name,
-        //     t2,
-        //     t3,
-        //     target_strand.clone(),
-        //     query_name,
-        //     q2,
-        //     q3,
-        //     query_strand.clone()
-        // );
         let block_target = Block {
             name: target_name.clone(),
             start: t2,
@@ -190,11 +188,12 @@ pub fn chain_parser(input: &str) -> nom::IResult<&str, ChainRecord> {
     let (input, _) = take_while(|x| x != 'c')(input)?; // should better
                                                        // let (_, title_vec) = tab_parser(title)?;
                                                        // let alignments = parse_blocks(blocks).unwrap();
-
     let chainrecord = ChainRecord {
         block_ivls: blocks,
         header: header.clone(),
     };
+    // info!("parse here!");
+    //TODO: return a hashmap: {chrom:vec<block_ivl>}
     // print_chain_record(&chainrecord);
 
     Ok((input, chainrecord))

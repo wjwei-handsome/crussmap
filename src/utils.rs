@@ -1,6 +1,8 @@
 use log::{error, warn};
 use std::{fs::File, io::Read, path::Path};
 
+use crate::parser::ChainRecords;
+
 pub fn read_file_to_string(file_path: &String) -> Result<String, String> {
     let mut f = File::open(file_path).map_err(|e| e.to_string())?;
     let mut data = String::with_capacity(512);
@@ -30,4 +32,23 @@ pub fn outfile_exist(outputname: &String, rewrite: bool) -> () {
             std::process::exit(1);
         }
     }
+}
+
+pub fn get_data_from_input(input: &Option<String>) -> String {
+    let data = match input {
+        // input file
+        Some(input_file) => {
+            input_files_exist(input_file);
+            read_file_to_string(input_file).unwrap()
+        }
+        // stdin
+        None => {
+            let mut data = String::with_capacity(512);
+            std::io::stdin()
+                .read_to_string(&mut data)
+                .expect("failed to read from stdin");
+            data
+        }
+    };
+    data
 }

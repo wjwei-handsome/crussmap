@@ -1,3 +1,9 @@
+![Crates.io](https://img.shields.io/crates/v/crussmap)
+![Crates.io (latest)](https://img.shields.io/crates/dv/crussmap)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/wjwei-handsome/crussmap/rust.yml)
+![Crates.io](https://img.shields.io/crates/l/crussmap)
+![GitHub repo size](https://img.shields.io/github/repo-size/wjwei-handsome/crussmap)
+
 # crussmap: [CrossMap](https://github.com/liguowang/CrossMap) in Rust
 
 ### crussmap is a faster tool to convert genome coordinates between difference reference assemblies.

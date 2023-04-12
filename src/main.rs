@@ -65,6 +65,7 @@ enum Commands {
         #[arg(short, long, default_value = "false")]
         rewrite: bool,
     },
+    // TODO: add test
     // TODO: Region
     // TODO: Suppprt MAF/PAF/SAM/delta -> chain
 }

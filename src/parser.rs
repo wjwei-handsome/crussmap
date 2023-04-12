@@ -1,5 +1,4 @@
-use std::io;
-
+use crate::interval::{get_block_ivl, Block, BlockIvl};
 use log::error;
 use nom::{
     bytes::complete::{is_not, tag, take_while},
@@ -8,13 +7,21 @@ use nom::{
     sequence::terminated,
     IResult,
 };
-
-use crate::interval::{get_block_ivl, Block, BlockIvl};
+use std::{fmt, io};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Strand {
     Positive,
     Negative,
+}
+
+impl fmt::Display for Strand {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Strand::Positive => write!(f, "+"),
+            Strand::Negative => write!(f, "-"),
+        }
+    }
 }
 
 impl Strand {
@@ -35,13 +42,23 @@ pub struct SeqInfo {
     pub end: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 
 pub struct Header {
     score: f64,
     pub target: SeqInfo,
     pub query: SeqInfo,
     chain_id: usize,
+}
+
+impl fmt::Debug for Header {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "score: {}\ttarget: {:?}\tquery: {:?}\tchain_id: {}",
+            self.score, self.target, self.query, self.chain_id
+        )
+    }
 }
 
 #[derive(Debug)]
@@ -80,7 +97,7 @@ impl<'a> Iterator for ChainRecords<'a> {
 }
 
 fn parse_header(header_line: &str) -> Result<Header, io::Error> {
-    // println!("parse header here");
+    // actually: it's few times to parse the header line
     let header_vec: Vec<&str> = header_line.split_whitespace().collect();
     if header_vec.len() != 12 {
         error!("invalid header: {}", header_line);
@@ -161,18 +178,18 @@ fn blocks(i: &str, header: Header) -> IResult<&str, Vec<BlockIvl>> {
         target_current_cursor += alignment.size + alignment.target_diff;
         query_current_cursor += alignment.size + alignment.query_diff;
         let block_target = Block {
-            name: target_name.clone(),
+            name: target_name.to_string(),
             start: t2,
             end: t3,
-            strand: target_strand.clone(),
+            strand: *target_strand,
         };
         let block_query = Block {
-            name: query_name.clone(),
+            name: query_name.to_string(),
             start: q2,
             end: q3,
-            strand: query_strand.clone(),
+            strand: *query_strand,
         };
-        let block_ivl = get_block_ivl(&block_target, block_query);
+        let block_ivl = get_block_ivl(block_target, block_query);
         acc.push(block_ivl);
         acc
     })(i);
@@ -186,69 +203,9 @@ pub fn chain_parser(input: &str) -> nom::IResult<&str, ChainRecord> {
     let (input, _) = line_ending(input)?;
     let (input, blocks) = blocks(input, header.clone())?;
     let (input, _) = take_while(|x| x != 'c')(input)?; // should better
-                                                       // let (_, title_vec) = tab_parser(title)?;
-                                                       // let alignments = parse_blocks(blocks).unwrap();
     let chainrecord = ChainRecord {
         block_ivls: blocks,
-        header: header.clone(),
+        header,
     };
-    // info!("parse here!");
-    //TODO: return a hashmap: {chrom:vec<block_ivl>}
-    // print_chain_record(&chainrecord);
-
     Ok((input, chainrecord))
 }
-
-// fn fa_start_tag(i: &str) -> IResult<&str, char> {
-//     char('>')(i)
-// }
-// fn line_seq(i: &str) -> IResult<&str, &str> {
-//     terminated(is_not(">\r\n"), line_ending)(i)
-// }
-// fn seq(i: &str) -> IResult<&str, String> {
-//     fold_many1(line_seq, String::new, |mut acc: String, x| {
-//         acc.push_str(x);
-//         acc
-//     })(i)
-// }
-
-// pub fn fasta_parse(i: &str) -> IResult<&str, FastaRecord> {
-//     let (i, _) = fa_start_tag(i)?;
-//     let (i, title) = not_line_ending(i)?;
-//     let (i, _) = line_ending(i)?;
-//     let (i, seq) = seq(i)?;
-//     let (i, _) = take_while(|x| x != '>')(i)?;
-//     let mut header_fields = title.trim_end().splitn(2, char::is_whitespace);
-//     let id = header_fields.next().unwrap();
-//     let desc = header_fields.next();
-//     Ok((i, FastaRecord { id, desc, seq }))
-// }
-
-// #[derive(Default, Clone, Debug)]
-// pub struct FastaRecord<'a> {
-//     id: &'a str,
-//     desc: Option<&'a str>,
-//     seq: String,
-// }
-
-// pub struct FastaRecords<'a>(pub &'a str);
-
-// impl<'a> Iterator for FastaRecords<'a> {
-//     type Item = Result<FastaRecord<'a>, String>;
-//     fn next(&mut self) -> Option<Self::Item> {
-//         if self.0.is_empty() {
-//             return None;
-//         }
-//         match fasta_parse(self.0) {
-//             Ok((i, r)) => {
-//                 self.0 = i;
-//                 return Some(Ok(r));
-//             }
-//             Err(e) => {
-//                 let mut msg = format!("{:?}", e);
-//                 msg.push_str(self.0);
-//                 return Some(Err(msg));
-//             }
-//         }
-//     }
-// }

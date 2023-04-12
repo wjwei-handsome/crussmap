@@ -1,22 +1,19 @@
-use std::{
-    fs::File,
-    io::{self, Read, Write},
-};
-
 use crate::{
     parser::{ChainRecords, Strand},
-    utils::{get_data_from_input, outfile_exist},
+    utils::{get_data_from_input, get_output_writer},
 };
+use std::io::Write;
 
 pub fn view_chain(input: &Option<String>, output: &Option<String>, csv: bool, rewrite: bool) -> () {
     let data = get_data_from_input(input);
-    let mut output_file: Box<dyn Write> = match output {
-        Some(output_file) => {
-            outfile_exist(output_file, rewrite);
-            Box::new(File::create(output_file).unwrap())
-        }
-        None => Box::new(io::stdout()),
-    };
+    // let mut output_file: Box<dyn Write> = match output {
+    //     Some(output_file) => {
+    //         outfile_exist(output_file, rewrite);
+    //         Box::new(File::create(output_file).unwrap())
+    //     }
+    //     None => Box::new(io::stdout()),
+    // };
+    let (mut output_file, _) = get_output_writer(output, rewrite);
     // info!("start parse");
     let chain_record_iter = ChainRecords(&data).into_iter();
     // info!("get iteror");

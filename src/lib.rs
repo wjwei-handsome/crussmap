@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate serde_derive;
+
 pub mod bed;
 pub mod interval;
 pub mod log;

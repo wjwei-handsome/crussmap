@@ -1,13 +1,24 @@
 [package]
 name = "crussmap"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["Wenjie Wei <wjwei9908@gmail.com>"]
+description = "crussmap is a faster tool to convert genome coordinates between difference reference assemblies. \nSupport file formats: [BED,...]. \nThis project reconstructs the [CrossMap](https://github.com/liguowang/CrossMap) code by rust to effectively improve speed and performance"
+readme = "README.md"
+license = "MIT"
+homepage = "https://wjwei.blog"
+documentation = "https://docs.rs/crate/crussmap/latest"
+repository = "https://github.com/wjwei-handsome/crussmap"
+exclude = ["**/tests/**", ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "4.2.1", features = ["derive"] }
+csv = "1.2.1"
 log = "0.4.17"
 log4rs = "1.2.0"
 nom = "7.1.3"
 rust-lapper = "1.1.0"
+serde = "1.0.160"
+serde_derive = "1.0.160"

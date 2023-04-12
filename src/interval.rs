@@ -1,15 +1,13 @@
+use crate::{
+    parser::{ChainRecords, Strand},
+    utils::get_data_from_input,
+};
+use log::{error, warn};
+use rust_lapper::{Interval, Lapper};
 use std::{
     cmp::{max, min},
     collections::HashMap,
-    io::Read,
-};
-
-use log::{error, info};
-use rust_lapper::{Interval, Lapper};
-
-use crate::{
-    parser::{ChainRecord, ChainRecords, Strand},
-    utils::{get_data_from_input, input_files_exist, read_file_to_string},
+    fmt,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -30,9 +28,19 @@ pub struct Region<'a> {
     pub strand: Strand,
 }
 
+impl fmt::Display for Region<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}\t{}\t{}\t{}",
+            self.chrom, self.start, self.end, self.strand,
+        )
+    }
+}
+
 pub type BlockIvl = Interval<usize, Block>;
 
-pub fn get_block_ivl(block_target: &Block, block_query: Block) -> BlockIvl {
+pub fn get_block_ivl(block_target: Block, block_query: Block) -> BlockIvl {
     BlockIvl {
         start: block_target.start,
         stop: block_target.end,
@@ -40,7 +48,7 @@ pub fn get_block_ivl(block_target: &Block, block_query: Block) -> BlockIvl {
     }
 }
 
-fn get_lapper_hashmap(input: &Option<String>) -> HashMap<String, Lapper<usize, Block>> {
+pub fn get_lapper_hashmap(input: &Option<String>) -> HashMap<String, Lapper<usize, Block>> {
     let data = get_data_from_input(input);
     let chain_record_iter = ChainRecords(&data).into_iter();
     let mut chrom_ivls_hashmap: HashMap<String, Lapper<usize, Block>> = HashMap::new();
@@ -58,7 +66,7 @@ fn intersect_two_region<'a>(
     region1: Region<'a>,
     region2: Region<'a>,
 ) -> Option<(&'a String, usize, usize)> {
-    // it's ugly!
+    // TODO:it's ugly!
     let chr1 = region1.chrom;
     let chr2 = region2.chrom;
     let s1 = region1.start;
@@ -72,7 +80,7 @@ fn intersect_two_region<'a>(
         return None;
     }
     if s1 > e1 || s2 > e2 {
-        error!("sss");
+        error!("wtf");
         return None;
     }
     let final_start = max(s1, s2);
@@ -80,39 +88,23 @@ fn intersect_two_region<'a>(
     return Some((chr1, final_start, final_end));
 }
 
-pub fn test_bed_find(
-    input: &Option<String>,
-    chrom: &String,
-    start: usize,
-    end: usize,
-    strand: &String,
-) -> () {
-    let lapper_hashmap = get_lapper_hashmap(input);
-    let q_region = Region {
-        chrom,
-        start,
-        end,
-        strand: Strand::Positive,
-    };
-    find_in_lapper(&lapper_hashmap, q_region);
-}
-
-fn find_in_lapper(lapper_hashmap: &HashMap<String, Lapper<usize, Block>>, q_region: Region) -> () {
+pub fn find_in_lapper<'a>(
+    lapper_hashmap: &'a HashMap<String, Lapper<usize, Block>>,
+    q_region: &Region<'a>,
+) -> Vec<Region<'a>> {
     let q_chrom = q_region.chrom;
-    let lapper = lapper_hashmap.get(q_chrom).unwrap();
-    info!("get chrom: {}", q_chrom);
+    let lapper = match lapper_hashmap.get(q_chrom) {
+        Some(lapper) => lapper,
+        None => {
+            warn!("chrom:{} not found in chain file", q_chrom);
+            return Vec::new();
+        }
+    };
+    // info!("get chrom: {}", q_chrom);
     let targets = lapper
         .find(q_region.start, q_region.end)
         .collect::<Vec<&BlockIvl>>();
-    info!("get targets");
-    let matches = get_matches_from_targets(targets, &q_region);
-    println!("{:?}", matches);
-}
-
-fn get_matches_from_targets<'a>(
-    targets: Vec<&'a Interval<usize, Block>>,
-    q_region: &'a Region<'a>,
-) -> Vec<Region<'a>> {
+    // info!("get targets");
     let mut matches: Vec<Region> = Vec::new();
     for target in targets {
         let source_start = target.start;

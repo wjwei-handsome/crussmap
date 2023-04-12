@@ -1,7 +1,26 @@
 use log::{error, warn};
-use std::{fs::File, io::Read, path::Path};
+use std::{
+    fs::{self, File},
+    io::Error,
+    io::{self, Read, Write},
+    path::Path,
+};
 
-use crate::parser::ChainRecords;
+pub fn get_output_writer(output: &Option<String>, rewrite: bool) -> (Box<dyn Write>, bool) {
+    let (output_file, stdout): (Box<dyn Write>, bool) = match output {
+        Some(output_file) => {
+            outfile_exist(output_file, rewrite);
+            (Box::new(File::create(output_file).unwrap()), false)
+        }
+        None => (Box::new(io::stdout()), true),
+    };
+    (output_file, stdout)
+}
+
+pub fn get_file_reader(input_file: &String) -> Result<File, Error> {
+    input_files_exist(input_file);
+    fs::File::open(input_file)
+}
 
 pub fn read_file_to_string(file_path: &String) -> Result<String, String> {
     let mut f = File::open(file_path).map_err(|e| e.to_string())?;

@@ -1,4 +1,4 @@
-use crussmap::{interval::test_bed_find, log::init_logger, view::view_chain};
+use crussmap::{bed::cross_bed, log::init_logger, view::view_chain};
 
 fn main() {
     init_logger();
@@ -10,16 +10,14 @@ fn main() {
             output,
             rewrite,
         } => view_chain(input, output, *csv, *rewrite),
-        Commands::Test {
+        Commands::Bed {
+            bed,
             input,
-            chrom,
-            start,
-            end,
-            strand,
-        } => test_bed_find(input, chrom, *start, *end, strand),
+            output,
+            unmap,
+            rewrite,
+        } => cross_bed(bed, input, output, unmap, *rewrite),
     }
-    // let a = read_test();
-    // println!("{:?}", a)
 }
 
 use clap::{Parser, Subcommand};
@@ -35,36 +33,38 @@ struct Cli {
 enum Commands {
     /// View chain file in tsv/csv format
     View {
-        /// Input chain file: *.chain/*.chain.gz supported; if not set, read from stdin
+        /// Input chain file: *.chain/*.chain.gz supported; if not set, read from STDIN
         #[arg(short, long, required = false)]
         input: Option<String>,
-        /// Output file path, if not set, output to stdout
+        /// Output file path, if not set, output to STDOUT
         #[arg(short, long, required = false)]
         output: Option<String>,
-        /// Output csv format, default is false
+        /// Output in csv format, default is false
         #[arg(short, long, default_value = "false", required = false)]
         csv: bool,
         /// Rewrite output file, default is false
-        #[arg(short, long, default_value = "false")]
+        #[arg(short, long, default_value = "false", required = false)]
         rewrite: bool,
     },
 
-    /// test for lapper
-    Test {
-        /// input tesr
-        #[arg(short, long, required = false)]
+    /// Converts BED file. Regions mapped to multiple locations to the new assembly will be split.
+    Bed {
+        /// bed file path
+        #[arg(short, long)]
+        bed: String,
+        /// input chain file path
+        #[arg(short, long)]
         input: Option<String>,
-        /// chrom
+        /// output bed file path, if not set, output to STDOUT
         #[arg(short, long)]
-        chrom: String,
-        /// start
+        output: Option<String>,
+        /// unmapped bed file path, if not set, output to STDOUT
         #[arg(short, long)]
-        start: usize,
-        /// end
-        #[arg(short, long)]
-        end: usize,
-        /// strand
-        #[arg(long)]
-        strand: String,
+        unmap: Option<String>,
+        /// rewrite output file, default is false
+        #[arg(short, long, default_value = "false")]
+        rewrite: bool,
     },
+    // TODO: Region
+    // TODO: Suppprt MAF/PAF/SAM/delta -> chain
 }

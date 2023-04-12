@@ -1,0 +1,8 @@
+chr1	120	200	g1	score	+
+chr1	5	20	g2	score	+
+chr1	80	120	g-split	score	+
+chr1	680	8120	g-not-in	score	+
+chr_no_exist	1	2	chr_not_in	score	+
+chr1	str	2	postion_str_err	score	+
+chr1	5	20	strand_not_correct	score	*
+chr1	50	20	start_larger_end	score	+

@@ -79,8 +79,8 @@ A fast interval tree library: [rust-lapper](https://github.com/sstadick/rust-lap
 
 ## ROADMAP
 
-- [] support gz file input
-- [] convert maf/paf/sam/delta to chian and crussmap
+- [ ] support gz file input
+- [ ] convert maf/paf/sam/delta to chian and crussmap
 
 ## LICENSE
 

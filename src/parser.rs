@@ -85,12 +85,12 @@ impl<'a> Iterator for ChainRecords<'a> {
         match chain_parser(self.0) {
             Ok((i, r)) => {
                 self.0 = i;
-                return Some(Ok(r));
+                Some(Ok(r))
             }
             Err(e) => {
                 let mut msg = format!("{:?}", e);
                 msg.push_str(self.0);
-                return Some(Err(msg));
+                Some(Err(msg))
             }
         }
     }

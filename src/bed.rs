@@ -151,7 +151,7 @@ pub fn cross_bed(
                 let current_match_region = &matches[j];
                 let hit_multi = match_len > 2;
                 let hit_info = match hit_multi {
-                    true => format!("(split.{}:{})", count, &matches[j - 1]).replace("\t", "@"),
+                    true => format!("(split.{}:{})", count, &matches[j - 1]).replace('\t', "@"),
                     false => "->".to_string(),
                 };
                 if stdout_mode {

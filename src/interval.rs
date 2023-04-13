@@ -50,7 +50,7 @@ pub fn get_block_ivl(block_target: Block, block_query: Block) -> BlockIvl {
 
 pub fn get_lapper_hashmap(input: &Option<String>) -> HashMap<String, Lapper<usize, Block>> {
     let data = get_data_from_input(input);
-    let chain_record_iter = ChainRecords(&data).into_iter();
+    let chain_record_iter = ChainRecords(&data);
     let mut chrom_ivls_hashmap: HashMap<String, Lapper<usize, Block>> = HashMap::new();
     for chain_record in chain_record_iter {
         let chain_record = chain_record.unwrap();
@@ -85,7 +85,7 @@ fn intersect_two_region<'a>(
     }
     let final_start = max(s1, s2);
     let final_end = min(e1, e2);
-    return Some((chr1, final_start, final_end));
+    Some((chr1, final_start, final_end))
 }
 
 pub fn find_in_lapper<'a>(
@@ -145,7 +145,7 @@ pub fn find_in_lapper<'a>(
             Strand::Negative => target_region.strand.reverse(),
         };
         matches.push(Region {
-            chrom: &target_region.chrom,
+            chrom: target_region.chrom,
             start: i_start,
             end: i_start + size,
             strand: apdx_strand,

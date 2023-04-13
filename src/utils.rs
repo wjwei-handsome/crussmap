@@ -29,7 +29,7 @@ pub fn read_file_to_string(file_path: &String) -> Result<String, String> {
     Ok(data)
 }
 
-pub fn input_files_exist(input_file: &String) -> () {
+pub fn input_files_exist(input_file: &String) {
     // check if input files exist
     let path = Path::new(input_file);
     if !path.exists() {
@@ -38,7 +38,7 @@ pub fn input_files_exist(input_file: &String) -> () {
     }
 }
 
-pub fn outfile_exist(outputname: &String, rewrite: bool) -> () {
+pub fn outfile_exist(outputname: &String, rewrite: bool) {
     // check if output file exists
     let path = Path::new(outputname);
     if path.exists() {
@@ -54,7 +54,7 @@ pub fn outfile_exist(outputname: &String, rewrite: bool) -> () {
 }
 
 pub fn get_data_from_input(input: &Option<String>) -> String {
-    let data = match input {
+    match input {
         // input file
         Some(input_file) => {
             input_files_exist(input_file);
@@ -68,6 +68,6 @@ pub fn get_data_from_input(input: &Option<String>) -> String {
                 .expect("failed to read from stdin");
             data
         }
-    };
-    data
+    }
+    // data
 }

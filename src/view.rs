@@ -4,7 +4,7 @@ use crate::{
 };
 use std::io::Write;
 
-pub fn view_chain(input: &Option<String>, output: &Option<String>, csv: bool, rewrite: bool) -> () {
+pub fn view_chain(input: &Option<String>, output: &Option<String>, csv: bool, rewrite: bool) {
     let data = get_data_from_input(input);
     // let mut output_file: Box<dyn Write> = match output {
     //     Some(output_file) => {
@@ -15,7 +15,7 @@ pub fn view_chain(input: &Option<String>, output: &Option<String>, csv: bool, re
     // };
     let (mut output_file, _) = get_output_writer(output, rewrite);
     // info!("start parse");
-    let chain_record_iter = ChainRecords(&data).into_iter();
+    let chain_record_iter = ChainRecords(&data);
     // info!("get iteror");
 
     if csv {

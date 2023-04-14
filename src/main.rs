@@ -1,3 +1,4 @@
+use clap::{Parser, Subcommand};
 use crussmap::{bed::cross_bed, log::init_logger, view::view_chain};
 
 fn main() {
@@ -19,8 +20,6 @@ fn main() {
         } => cross_bed(bed, input, output, unmap, *rewrite),
     }
 }
-
-use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

@@ -52,86 +52,79 @@ pub fn get_lapper_hashmap(input: &Option<String>) -> HashMap<String, Lapper<usiz
     let data = get_data_from_input(input);
     let chain_record_iter = ChainRecords(&data);
     let mut chrom_ivls_hashmap: HashMap<String, Lapper<usize, Block>> = HashMap::new();
+    let mut chrom_ivls_vec_hashmap: HashMap<String, Vec<Interval<usize, Block>>> = HashMap::new();
     for chain_record in chain_record_iter {
         let chain_record = chain_record.unwrap();
         let target_chrom = chain_record.header.target.name;
         let block_ivls = chain_record.block_ivls;
-        let ivl_intersecter = Lapper::new(block_ivls);
-        chrom_ivls_hashmap.insert(target_chrom, ivl_intersecter);
+        // combine interval vecs when target_chroms are same:
+        if chrom_ivls_vec_hashmap.contains_key(&target_chrom) {
+            let chrom_ivls_vec = chrom_ivls_vec_hashmap.get_mut(&target_chrom).unwrap();
+            chrom_ivls_vec.extend(block_ivls);
+        } else {
+            chrom_ivls_vec_hashmap.insert(target_chrom.clone(), block_ivls);
+        }
+    }
+    for (chrom, ivls) in chrom_ivls_vec_hashmap {
+        let lapper = Lapper::new(ivls);
+        chrom_ivls_hashmap.insert(chrom, lapper);
     }
     chrom_ivls_hashmap
 }
 
-fn intersect_two_region<'a>(
-    region1: Region<'a>,
-    region2: Region<'a>,
-) -> Option<(&'a String, usize, usize)> {
-    // TODO:it's ugly!
-    let chr1 = region1.chrom;
-    let chr2 = region2.chrom;
-    let s1 = region1.start;
-    let s2 = region2.start;
-    let e1 = region1.end;
-    let e2 = region2.end;
-    if chr1 != chr2 {
+fn intersect_two_region(
+    start1: usize,
+    end1: usize,
+    start2: usize,
+    end2: usize,
+) -> Option<(usize, usize)> {
+    if start1 > end2 || start2 > end1 {
         return None;
     }
-    if s1 > e2 || s2 > e1 {
-        return None;
-    }
-    if s1 > e1 || s2 > e2 {
-        error!("wtf");
-        return None;
-    }
-    let final_start = max(s1, s2);
-    let final_end = min(e1, e2);
-    Some((chr1, final_start, final_end))
+    let final_start = max(start1, start2);
+    let final_end = min(end1, end2);
+    Some((final_start, final_end))
 }
 
 pub fn find_in_lapper<'a>(
     lapper_hashmap: &'a HashMap<String, Lapper<usize, Block>>,
     q_region: &Region<'a>,
 ) -> Vec<Region<'a>> {
-    let q_chrom = q_region.chrom;
-    let lapper = match lapper_hashmap.get(q_chrom) {
+    let lapper = match lapper_hashmap.get(q_region.chrom) {
         Some(lapper) => lapper,
         None => {
-            warn!("chrom:{} not found in chain file", q_chrom);
+            warn!("chrom:{} not found in chain file", q_region.chrom);
             return Vec::new();
         }
     };
-    // info!("get chrom: {}", q_chrom);
+    // info!("get chrom: {} lapper: {:?}", q_chrom, lapper);
     let targets = lapper
         .find(q_region.start, q_region.end)
         .collect::<Vec<&BlockIvl>>();
-    // info!("get targets");
+    // info!("get targets: {:?}", targets);
     let mut matches: Vec<Region> = Vec::new();
     for target in targets {
-        let source_start = target.start;
-        let source_end = target.stop;
         let target_region = Region {
             chrom: &target.val.name,
             start: target.val.start,
             end: target.val.start,
             strand: target.val.strand,
         };
-        let region1 = Region {
-            chrom: q_region.chrom,
-            start: q_region.start,
-            end: q_region.end,
-            strand: Strand::Positive,
-        };
-        let region2 = Region {
-            chrom: q_region.chrom,
-            start: source_start,
-            end: source_end,
-            strand: Strand::Positive,
-        };
-        let (real_chr, real_start, real_end) = intersect_two_region(region1, region2).unwrap();
-        let l_offset = real_start.abs_diff(source_start);
+        let (real_start, real_end) =
+            match intersect_two_region(q_region.start, q_region.end, target.start, target.stop) {
+                Some((start, end)) => (start, end),
+                None => {
+                    error!(
+                        "intersect_two_region error in {}:{}{}",
+                        q_region.chrom, q_region.start, q_region.end
+                    );
+                    continue;
+                }
+            };
+        let l_offset = real_start.abs_diff(target.start);
         let size = real_end.abs_diff(real_start);
         matches.push(Region {
-            chrom: real_chr,
+            chrom: q_region.chrom,
             start: real_start,
             end: real_end,
             strand: q_region.strand,

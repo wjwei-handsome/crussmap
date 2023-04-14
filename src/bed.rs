@@ -4,7 +4,7 @@ use crate::{
     utils::{get_file_reader, get_output_writer},
 };
 use csv::{DeserializeRecordsIter, ReaderBuilder};
-use log::warn;
+use log::{info, warn};
 use std::{
     fmt,
     io::{self, Write},
@@ -117,6 +117,7 @@ pub fn cross_bed(
     rewrite: bool,
 ) {
     let lapper_hashmap = get_lapper_hashmap(input_chain);
+    info!("get lapper hashmap done!");
     let bed_file = get_file_reader(bed_file).unwrap();
     let (mut output_file, stdout_mode) = get_output_writer(output_bed, rewrite);
     let mut unmaped_file = match stdout_mode {
@@ -127,7 +128,10 @@ pub fn cross_bed(
     let mut bed_reder = BedReader::new(bed_file);
     for bed_line in bed_reder.bedrecords() {
         let bed_rcd = match bed_line {
-            Ok(bed_rcd) => bed_rcd,
+            Ok(bed_rcd) => {
+                // info!("capture a bed record!");
+                bed_rcd
+            }
             Err(e) => {
                 warn!("SKIP: Error parsing BED record: {}", e);
                 continue;
@@ -139,6 +143,8 @@ pub fn cross_bed(
             continue;
         }
         let matches = find_in_lapper(&lapper_hashmap, &bed_region);
+        // info!("{:?}", &lapper_hashmap);
+        // info!("{:?}@{:?}", &bed_region, matches);
         if matches.is_empty() {
             unmaped_file
                 .write_all(format!("{}\tUNMAP\n", bed_rcd).as_bytes())

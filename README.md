@@ -1,5 +1,5 @@
 ![Crates.io](https://img.shields.io/crates/v/crussmap)
-![Crates.io (latest)](https://img.shields.io/crates/dv/crussmap)
+![Crates.io](https://img.shields.io/crates/d/crussmap)
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/wjwei-handsome/crussmap/rust.yml)
 ![Crates.io](https://img.shields.io/crates/l/crussmap)
 ![GitHub repo size](https://img.shields.io/github/repo-size/wjwei-handsome/crussmap)

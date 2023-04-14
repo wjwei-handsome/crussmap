@@ -1,6 +1,6 @@
 [package]
 name = "crussmap"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Wenjie Wei <wjwei9908@gmail.com>"]
 description = "crussmap is a faster tool to convert genome coordinates between difference reference assemblies. \nSupport file formats: [BED,...]. \nThis project reconstructs the [CrossMap](https://github.com/liguowang/CrossMap) code by rust to effectively improve speed and performance"

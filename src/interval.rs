@@ -48,6 +48,19 @@ pub fn get_block_ivl(block_target: Block, block_query: Block) -> BlockIvl {
     }
 }
 
+///
+///
+/// # Arguments
+///
+/// * `input`:
+///
+/// returns: HashMap<String, Lapper<usize, Block>, RandomState>
+///
+/// # Examples
+///
+/// ```
+///
+/// ```
 pub fn get_lapper_hashmap(input: &Option<String>) -> HashMap<String, Lapper<usize, Block>> {
     let data = get_data_from_input(input);
     let chain_record_iter = ChainRecords(&data);
@@ -89,12 +102,12 @@ fn intersect_two_region(
 pub fn find_in_lapper<'a>(
     lapper_hashmap: &'a HashMap<String, Lapper<usize, Block>>,
     q_region: &Region<'a>,
-) -> Vec<Region<'a>> {
+) -> Option<Vec<Region<'a>>> {
     let lapper = match lapper_hashmap.get(q_region.chrom) {
         Some(lapper) => lapper,
         None => {
             warn!("chrom:{} not found in chain file", q_region.chrom);
-            return Vec::new();
+            return None;
         }
     };
     // info!("get chrom: {} lapper: {:?}", q_chrom, lapper);
@@ -102,6 +115,9 @@ pub fn find_in_lapper<'a>(
         .find(q_region.start, q_region.end)
         .collect::<Vec<&BlockIvl>>();
     // info!("get targets: {:?}", targets);
+    if targets.is_empty() {
+        return None;
+    }
     let mut matches: Vec<Region> = Vec::new();
     for target in targets {
         let target_region = Region {
@@ -144,5 +160,5 @@ pub fn find_in_lapper<'a>(
             strand: apdx_strand,
         });
     }
-    matches
+    Some(matches)
 }

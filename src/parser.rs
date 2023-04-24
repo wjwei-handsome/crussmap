@@ -196,7 +196,7 @@ fn blocks(i: &str, header: Header) -> IResult<&str, Vec<BlockIvl>> {
     x
 }
 
-pub fn chain_parser(input: &str) -> nom::IResult<&str, ChainRecord> {
+pub fn chain_parser(input: &str) -> IResult<&str, ChainRecord> {
     let (input, _) = tag("chain")(input)?;
     let (input, header_line) = not_line_ending(input)?;
     let header = parse_header(header_line).unwrap();

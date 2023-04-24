@@ -1,6 +1,6 @@
 use log::{error, warn};
 use std::{
-    fs::{self, File},
+    fs::File,
     io::Error,
     io::{self, Read, Write},
     path::Path,
@@ -19,7 +19,7 @@ pub fn get_output_writer(output: &Option<String>, rewrite: bool) -> (Box<dyn Wri
 
 pub fn get_file_reader(input_file: &String) -> Result<File, Error> {
     input_files_exist(input_file);
-    fs::File::open(input_file)
+    File::open(input_file)
 }
 
 pub fn read_file_to_string(file_path: &String) -> Result<String, String> {
@@ -63,7 +63,7 @@ pub fn get_data_from_input(input: &Option<String>) -> String {
         // stdin
         None => {
             let mut data = String::with_capacity(512);
-            std::io::stdin()
+            io::stdin()
                 .read_to_string(&mut data)
                 .expect("failed to read from stdin");
             data

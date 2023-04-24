@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use crussmap::{bed::cross_bed, log::init_logger, view::view_chain};
+// use crussmap::test_ryon::test;
 
 fn main() {
     init_logger();
@@ -19,6 +20,7 @@ fn main() {
             rewrite,
         } => cross_bed(bed, input, output, unmap, *rewrite),
     }
+    // test();
 }
 
 #[derive(Parser)]

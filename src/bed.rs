@@ -73,7 +73,7 @@ impl BedRecord {
         }
     }
 
-    /// Access auxilliary fields after the strand field by index
+    /// Access auxiliary fields after the strand field by index
     /// (counting first field (chromosome) as 0).
     pub fn aux(&self, i: usize) -> Option<&str> {
         let j = i - 3;
@@ -143,34 +143,36 @@ pub fn cross_bed(
             continue;
         }
         let matches = find_in_lapper(&lapper_hashmap, &bed_region);
-        // info!("{:?}", &lapper_hashmap);
-        // info!("{:?}@{:?}", &bed_region, matches);
-        if matches.is_empty() {
-            unmaped_file
-                .write_all(format!("{}\tUNMAP\n", bed_rcd).as_bytes())
-                .unwrap();
-        } else {
-            let match_len = matches.len();
-            let mut count = 0;
-            for j in (1..match_len).step_by(2) {
-                count += 1;
-                let current_match_region = &matches[j];
-                let hit_multi = match_len > 2;
-                let hit_info = match hit_multi {
-                    true => format!("(split.{}:{})", count, &matches[j - 1]).replace('\t', "@"),
-                    false => "->".to_string(),
-                };
-                if stdout_mode {
-                    output_file
-                        .write_all(
-                            format!("{}\t{}\t{}\n", bed_rcd, hit_info, current_match_region)
-                                .as_bytes(),
-                        )
-                        .unwrap();
-                } else {
-                    output_file
-                        .write_all(format!("{}\n", current_match_region).as_bytes())
-                        .unwrap();
+        match matches {
+            None => {
+                unmaped_file
+                    .write_all(format!("{}\tUNMAP\n", bed_rcd).as_bytes())
+                    .unwrap();
+                continue;
+            }
+            Some(matches) => {
+                let match_len = matches.len();
+                let mut count = 0;
+                for j in (1..match_len).step_by(2) {
+                    count += 1;
+                    let current_match_region = &matches[j];
+                    let hit_multi = match_len > 2;
+                    let hit_info = match hit_multi {
+                        true => format!("(split.{}:{})", count, &matches[j - 1]).replace('\t', "@"),
+                        false => "->".to_string(),
+                    };
+                    if stdout_mode {
+                        output_file
+                            .write_all(
+                                format!("{}\t{}\t{}\n", bed_rcd, hit_info, current_match_region)
+                                    .as_bytes(),
+                            )
+                            .unwrap();
+                    } else {
+                        output_file
+                            .write_all(format!("{}\n", current_match_region).as_bytes())
+                            .unwrap();
+                    }
                 }
             }
         }
